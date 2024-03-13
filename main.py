@@ -14,8 +14,9 @@ def feature_placeholder_1(content):
 def feature_placeholder_2(content):
     return ()
 
-def feature_placeholder_3(content):
+def features_placeholder_3(content):
     return ()
+
 
 
 def main():
