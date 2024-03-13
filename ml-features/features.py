@@ -1,6 +1,10 @@
 
 import re
 import numpy as np
+import base64
+import ast
+import io
+import binascii
 
 # 1. Number of words in file
 def count_words(file_content):
@@ -66,3 +70,16 @@ def plus_signs_stats(file_content):
         "plus_signs_third_quartile": third_quartile,
         "plus_signs_max_value": max_value
     }
+
+def obfuscated_code_python(file_content):
+    matches = re.findall(r'(?s)\"\"*[^\']*\"\"*|\'\'*[^\']*\'\'*', file_content)
+    counter = 0
+    stripped_matches = [match.strip('\"\'') for match in matches]
+    for match in stripped_matches:
+        try:
+            decoded_data = base64.b64decode(match.encode())
+            module = ast.parse(io.BytesIO(decoded_data).read().decode())
+            counter += 1
+        except(SyntaxError, UnicodeDecodeError, binascii.Error):
+            pass
+    return ("obfuscated_code_python", counter)
