@@ -5,16 +5,26 @@ from pprint import pprint
 import re
 import numpy as np
 import json
+import base64
+import ast
+import io
+import binascii
+import traceback
+import sys
+
+
+from features.features import SnippetStats
+from features.features_model import Features
 
 args = None
 
 
 def load_yara_rules(folder_path):
     yara_rules = []
-    print("Method Loading Yar Rules")
+    #print("Method Loading Yar Rules")
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            print(f"Rule {file}")
+            #print(f"Rule {file}")
             if file.endswith(".yar"):
                 yar_file_path = os.path.abspath(os.path.join(root, file))
                 yara_rules.append(yar_file_path)
@@ -64,20 +74,19 @@ def list_python_files(directory):
 
 def feature_count_words(file_content):
     words = file_content.split()
-    return len(words)
-
+    return {"count_words" : len(words) }
 
 def feature_count_lines(file_content):
     lines = file_content.split("\n")
-    return ("number_of_lines", len(lines))
+    return {"number_of_lines": len(lines)}
 
 def feature_count_urls(file_content):
     urls = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', file_content)
-    return ("number_of_urls", len(urls))
+    return {"number_of_urls": len(urls)}
 
 def feature_count_ips(file_content):
     ips = re.findall(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b', file_content)
-    return ("number_of_ip_addresses", len(ips))
+    return {"number_of_ip_addresses": len(ips)}
 
 
 def feature_square_brackets_stats(file_content):
@@ -94,7 +103,7 @@ def feature_square_brackets_stats(file_content):
         "square_brackets_max_value": max_value
     }
 
-# 6. Revised Statistics on ratio of equal signs per line
+
 def feature_equal_signs_stats(file_content):
     lines = file_content.split("\n")
     ratios = [line.count("=") / len(line) for line in lines if len(line) > 0]
@@ -109,7 +118,6 @@ def feature_equal_signs_stats(file_content):
         "equal_signs_max_value": max_value
     }
 
-# 7. Revised Statistics on ratio of plus signs per line
 def feature_plus_signs_stats(file_content):
     lines = file_content.split("\n")
     ratios = [line.count("+") / len(line) for line in lines if len(line) > 0]
@@ -124,6 +132,56 @@ def feature_plus_signs_stats(file_content):
         "plus_signs_max_value": max_value
     }
 
+def feature_underscore_signs_stats(file_content):
+    lines = file_content.split("\n")
+    ratios = [line.count("_") / len(line) for line in lines if len(line) > 0]
+    mean = np.mean(ratios)
+    std_dev = np.std(ratios)
+    third_quartile = np.quantile(ratios, 0.75)
+    max_value = max(ratios)
+    return {
+        "underscore_signs_mean": mean,
+        "underscore_signs_std_dev": std_dev,
+        "underscore_signs_third_quartile": third_quartile,
+        "underscore_signs_max_value": max_value
+    }
+
+def obfuscated_code_python(file_content):
+    matches = re.findall(r'(?s)\"\"*[^\']*\"\"*|\'\'*[^\']*\'\'*', file_content)
+    counter = 0
+    stripped_matches = [match.strip('\"\'') for match in matches]
+    for match in stripped_matches:
+        try:
+            decoded_data = base64.b64decode(match.encode())
+            module = ast.parse(io.BytesIO(decoded_data).read().decode())
+            counter += 1
+        except(SyntaxError, UnicodeDecodeError, binascii.Error):
+            pass
+    return {"obfuscated_code_python": counter}
+
+
+def make_shanon_features(package_id:str, package_name:str, file_name:str, file:str):
+
+    snippet_stats = SnippetStats()
+
+    snippet_stats.set_snippet(file)
+
+    snippet_features = Features(
+        package_id=package_id,
+        package_name=package_name,
+        file_name=file_name,
+        # quantitative features
+        shanon_entropy__file=snippet_stats.shannon_entropy__file(),
+        shanon_entropy__number_outliers= snippet_stats.shannon_entropy__file(),
+        shanon_entropy__mean= snippet_stats.shannon_entropy__mean(),
+        shanon_entropy__median=snippet_stats.shannon_entropy__median(),
+        shanon_entropy__variance=snippet_stats.shannon_entropy__variance(),
+        shanon_entropy__max= snippet_stats.shannon_entropy__max(),
+        shanon_entropy__1Q= snippet_stats.shannon_entropy__1Q(),
+        shanon_entropy__3Q= snippet_stats.shannon_entropy__3Q(),
+    )
+    return(snippet_features)
+
 
 def main():
 
@@ -131,7 +189,7 @@ def main():
     yara_path = "./yara"
     yara_rules = []
 
-    print("Start of Program")
+    #print("Start of Program")
     parser = argparse.ArgumentParser(description="Scan a folder using YARA")
     parser.add_argument("folder", help="Folder path to scan")
     args = parser.parse_args()
@@ -141,35 +199,68 @@ def main():
         print("Error: Folder does not exist.")
         return
 
-    print(f"Running on folder {args.folder}")
+    #print(f"Running on folder {args.folder}")
     yara_rules = load_yara_rules(yara_path)
     python_files = list_python_files(args.folder)
-    top_python_files = python_files[0:100]
+    top_python_files = python_files[0:500]
     #run_yara_files(folder_path)
 
     results = []
     for file in top_python_files:
+
         with open(file, 'r') as file_to_be_read:
-            file_content = file_to_be_read.read()
-                
-            result = dict()
-            parts = file.split('/')
-            last_part = parts[-1]
-            result["file_name"] = last_part
-            result["count_word"] = feature_count_words(str(file_content))
-            result["count_lines"] = feature_count_lines(str(file_content))
-            result["count_urls"] = feature_count_urls(str(file_content))
-            result["count_ips"] = feature_count_ips(str(file_content))
+            try:
+                file_content = file_to_be_read.read()
 
-            for rule in yara_rules:
-                yara_result = run_yara_rule(rule, file)
-                result.update(yara_result)
+                result = dict()
+                parts = file.split('/')
+                last_part = parts[-1]
+                result["file_name"] = last_part
 
-            results.append(result)
+                if file_content:
+                   
+                    snippet_stats = SnippetStats()
+                    snippet_stats.set_snippet(file_content)
+                    snippet_stats.line_entropy()
+                    
+                    shanon_results = {
+                      "shanon_entropy__mean":  snippet_stats.shannon_entropy__mean(),
+                      "shanon_entropy__median":  snippet_stats.shannon_entropy__median(),
+                      "shanon_entropy__variance":  snippet_stats.shannon_entropy__variance(),
+                      "shanon_entropy__max":  snippet_stats.shannon_entropy__max(),
+                      "shanon_entropy__1Q":  snippet_stats.shannon_entropy__1Q(),
+                      "shanon_entropy__3Q":  snippet_stats.shannon_entropy__3Q(),
+                      "shanon_entropy__outliers":  snippet_stats.shannon_entropy__outliers(),
+                    }
+
+                    result.update(shanon_results)
+
+                stripped_file = file_content.replace(" ", "")
+                stripped_file = stripped_file.replace("\n", "")
+
+                if stripped_file:
+                    result.update(feature_count_words(str(file_content)))
+                    result.update(feature_count_lines(str(file_content)))
+                    result.update(feature_count_urls(str(file_content)))
+                    result.update(feature_count_ips(str(file_content)))
+                    result.update(feature_square_brackets_stats(str(file_content)))
+                    result.update(feature_equal_signs_stats(str(file_content)))
+                    result.update(feature_plus_signs_stats(str(file_content)))
+                    result.update(obfuscated_code_python(str(file_content)))
+
+                    for rule in yara_rules:
+                        yara_result = run_yara_rule(rule, file)
+                        result.update(yara_result)
+
+                    results.append(result)
+
+            except:
+                print("An exception occurred:", sys.exc_info()[0])  # Print exception info
+                traceback.print_exc()  # This will print the stack trace to stderr
 
     #pprint(results)
     json_string = json.dumps(results)
-    print(json_string)
+    #print(json_string)
 
 if __name__ == "__main__":
     main()

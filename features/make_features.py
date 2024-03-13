@@ -2,7 +2,7 @@ from typing import Dict
 from features.features_model import Features, PackageFeartures
 from features.features import SnippetStats
 
-def make_feaures(package_id:str, package_name:str, file_name:str, file:str):
+def make_features(package_id:str, package_name:str, file_name:str, file:str):
 
     snippet_stats = SnippetStats()
 
