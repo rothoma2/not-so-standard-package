@@ -83,3 +83,20 @@ def obfuscated_code_python(file_content):
         except(SyntaxError, UnicodeDecodeError, binascii.Error):
             pass
     return ("obfuscated_code_python", counter)
+
+def malicious_dependencies(file_content, blacklist):
+    tree = ast.parse(file_content)
+    dependencies = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                dependencies.append(alias.name)
+        elif isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                dependencies.append(alias.name)
+                if node.module:
+                    dependencies.append(node.module)
+
+    blacklisted_count = sum(1 for dependency in dependencies if dependency in blacklist)
+
+    return {"blacklisted_dependencies": blacklisted_count}
