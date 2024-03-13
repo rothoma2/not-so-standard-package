@@ -62,27 +62,24 @@ def list_python_files(directory):
     return python_files
 
 
-# 1. Number of words in file
 def feature_count_words(file_content):
     words = file_content.split()
     return len(words)
 
-# 2. Number of lines in file
+
 def feature_count_lines(file_content):
     lines = file_content.split("\n")
     return ("number_of_lines", len(lines))
 
-# 3. Number of URLs in file
 def feature_count_urls(file_content):
     urls = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', file_content)
     return ("number_of_urls", len(urls))
 
-# 4. Number of IP addresses in file
 def feature_count_ips(file_content):
     ips = re.findall(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b', file_content)
     return ("number_of_ip_addresses", len(ips))
 
-# 5. Revised Statistics on ratio of square brackets per line
+
 def feature_square_brackets_stats(file_content):
     lines = file_content.split("\n")
     ratios = [line.count("[") / len(line) for line in lines if len(line) > 0]
@@ -147,7 +144,7 @@ def main():
     print(f"Running on folder {args.folder}")
     yara_rules = load_yara_rules(yara_path)
     python_files = list_python_files(args.folder)
-    top_python_files = python_files[0:20]
+    top_python_files = python_files[0:100]
     #run_yara_files(folder_path)
 
     results = []
@@ -160,6 +157,9 @@ def main():
             last_part = parts[-1]
             result["file_name"] = last_part
             result["count_word"] = feature_count_words(str(file_content))
+            result["count_lines"] = feature_count_lines(str(file_content))
+            result["count_urls"] = feature_count_urls(str(file_content))
+            result["count_ips"] = feature_count_ips(str(file_content))
 
             for rule in yara_rules:
                 yara_result = run_yara_rule(rule, file)
@@ -167,9 +167,9 @@ def main():
 
             results.append(result)
 
-    pprint(results)
+    #pprint(results)
     json_string = json.dumps(results)
-    #print(json_string)
+    print(json_string)
 
 if __name__ == "__main__":
     main()
