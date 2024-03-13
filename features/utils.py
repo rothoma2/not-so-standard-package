@@ -21,8 +21,6 @@ def shannon_entropy(text):
 def shannon_entropy_lines_outliers(lines):
     # lines = code.split('\n')
     # entropy = [shannon_entropy(line) for line in lines]
-    print (f'line:{lines}')
-    print (f'len:{len(lines)}')
     if len(lines)==1:
         return 0
 

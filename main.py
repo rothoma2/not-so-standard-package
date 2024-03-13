@@ -260,7 +260,7 @@ def main():
 
     #pprint(results)
     json_string = json.dumps(results)
-    #print(json_string)
+    print(json_string)
 
 if __name__ == "__main__":
     main()
