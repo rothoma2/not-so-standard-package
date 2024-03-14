@@ -1,6 +1,6 @@
 import json
 from util import Util
-from ml_model import Model
+from machine_learning.ml_model import Model
 
 
 def main():
