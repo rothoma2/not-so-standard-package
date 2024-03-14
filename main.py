@@ -11,7 +11,14 @@ import io
 import binascii
 import traceback
 import sys
+import hashlib
+import openai
+from rich.progress import Progress
 
+openai.organization = "XXX"
+openai.api_key = "XXX"
+ 
+model_name="gpt-3.5-turbo"
 
 from features.features import SnippetStats
 from features.features_model import Features
@@ -29,7 +36,6 @@ def load_yara_rules(folder_path):
                 yar_file_path = os.path.abspath(os.path.join(root, file))
                 yara_rules.append(yar_file_path)
     return yara_rules
-
 
 def count_yara_hits(content):
     lines = content.split('\n')
@@ -71,7 +77,6 @@ def list_python_files(directory):
 
     return python_files
 
-
 def feature_count_words(file_content):
     words = file_content.split()
     return {"count_words" : len(words) }
@@ -88,7 +93,6 @@ def feature_count_ips(file_content):
     ips = re.findall(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b', file_content)
     return {"number_of_ip_addresses": len(ips)}
 
-
 def feature_square_brackets_stats(file_content):
     lines = file_content.split("\n")
     ratios = [line.count("[") / len(line) for line in lines if len(line) > 0]
@@ -102,7 +106,6 @@ def feature_square_brackets_stats(file_content):
         "square_brackets_third_quartile": third_quartile,
         "square_brackets_max_value": max_value
     }
-
 
 def feature_equal_signs_stats(file_content):
     lines = file_content.split("\n")
@@ -159,7 +162,6 @@ def obfuscated_code_python(file_content):
             pass
     return {"obfuscated_code_python": counter}
 
-
 def make_shanon_features(package_id:str, package_name:str, file_name:str, file:str):
 
     snippet_stats = SnippetStats()
@@ -182,6 +184,27 @@ def make_shanon_features(package_id:str, package_name:str, file_name:str, file:s
     )
     return(snippet_features)
 
+def calculate_sha1(input_string):
+    sha1 = hashlib.sha1()
+    sha1.update(input_string.encode('utf-8'))
+    sha1_hash = sha1.hexdigest()
+    return sha1_hash
+
+def talk_with_chatgpt():
+
+    model_name="gpt-3.5-turbo"
+    message = {
+            'role': 'user',
+            'content': "Hello World. Can you say Hello Back?"
+        }
+    
+    response = openai.ChatCompletion.create(
+        model=model_name,
+        messages=[message]
+    )
+
+    chatbot_response = response.choices[0].message['content']
+    print(chatbot_response.strip())
 
 def main():
 
@@ -192,7 +215,13 @@ def main():
     #print("Start of Program")
     parser = argparse.ArgumentParser(description="Scan a folder using YARA")
     parser.add_argument("folder", help="Folder path to scan")
+    parser.add_argument("--output", "-o", help="Output file path", default="output.json")
+
     args = parser.parse_args()
+
+    openai.organization = os.getenv("openai_organization")
+    openai.api_key = os.getenv("openai_api_key")
+
 
     # Check if the folder exists
     if not os.path.isdir(args.folder):
@@ -202,65 +231,79 @@ def main():
     #print(f"Running on folder {args.folder}")
     yara_rules = load_yara_rules(yara_path)
     python_files = list_python_files(args.folder)
-    top_python_files = python_files[0:500]
+    top_python_files = python_files[0:7000]
     #run_yara_files(folder_path)
 
     results = []
-    for file in top_python_files:
+    with Progress() as progress:
 
-        with open(file, 'r') as file_to_be_read:
-            try:
-                file_content = file_to_be_read.read()
+        task_count = len(top_python_files)
+        task_id = progress.add_task("[green]Processing...", total=task_count)
+    
+        for file in top_python_files:
 
-                result = dict()
-                parts = file.split('/')
-                last_part = parts[-1]
-                result["file_name"] = last_part
+            with open(file, 'r') as file_to_be_read:
 
-                if file_content:
-                   
-                    snippet_stats = SnippetStats()
-                    snippet_stats.set_snippet(file_content)
-                    snippet_stats.line_entropy()
+                try:
+                    file_content = file_to_be_read.read()
+
+                    result = dict()
+                    parts = file.split('/')
+                    last_part = parts[-1]
+                    result["file_name"] = last_part
+                    result["full_file_path"] = file
+                    result["file_hash"] = calculate_sha1(file)
+
+                    if file_content:
                     
-                    shanon_results = {
-                      "shanon_entropy__mean":  snippet_stats.shannon_entropy__mean(),
-                      "shanon_entropy__median":  snippet_stats.shannon_entropy__median(),
-                      "shanon_entropy__variance":  snippet_stats.shannon_entropy__variance(),
-                      "shanon_entropy__max":  snippet_stats.shannon_entropy__max(),
-                      "shanon_entropy__1Q":  snippet_stats.shannon_entropy__1Q(),
-                      "shanon_entropy__3Q":  snippet_stats.shannon_entropy__3Q(),
-                      "shanon_entropy__outliers":  snippet_stats.shannon_entropy__outliers(),
-                    }
+                        snippet_stats = SnippetStats()
+                        snippet_stats.set_snippet(file_content)
+                        snippet_stats.line_entropy()
+                        
+                        shanon_results = {
+                        "shanon_entropy__mean":  snippet_stats.shannon_entropy__mean(),
+                        "shanon_entropy__median":  snippet_stats.shannon_entropy__median(),
+                        "shanon_entropy__variance":  snippet_stats.shannon_entropy__variance(),
+                        "shanon_entropy__max":  snippet_stats.shannon_entropy__max(),
+                        "shanon_entropy__1Q":  snippet_stats.shannon_entropy__1Q(),
+                        "shanon_entropy__3Q":  snippet_stats.shannon_entropy__3Q(),
+                        "shanon_entropy__outliers":  snippet_stats.shannon_entropy__outliers(),
+                        }
 
-                    result.update(shanon_results)
+                        result.update(shanon_results)
 
-                stripped_file = file_content.replace(" ", "")
-                stripped_file = stripped_file.replace("\n", "")
+                    stripped_file = file_content.replace(" ", "")
+                    stripped_file = stripped_file.replace("\n", "")
 
-                if stripped_file:
-                    result.update(feature_count_words(str(file_content)))
-                    result.update(feature_count_lines(str(file_content)))
-                    result.update(feature_count_urls(str(file_content)))
-                    result.update(feature_count_ips(str(file_content)))
-                    result.update(feature_square_brackets_stats(str(file_content)))
-                    result.update(feature_equal_signs_stats(str(file_content)))
-                    result.update(feature_plus_signs_stats(str(file_content)))
-                    result.update(obfuscated_code_python(str(file_content)))
+                    if stripped_file:
+                        result.update(feature_count_words(str(file_content)))
+                        result.update(feature_count_lines(str(file_content)))
+                        result.update(feature_count_urls(str(file_content)))
+                        result.update(feature_count_ips(str(file_content)))
+                        result.update(feature_square_brackets_stats(str(file_content)))
+                        result.update(feature_equal_signs_stats(str(file_content)))
+                        result.update(feature_plus_signs_stats(str(file_content)))
+                        result.update(obfuscated_code_python(str(file_content)))
 
-                    for rule in yara_rules:
-                        yara_result = run_yara_rule(rule, file)
-                        result.update(yara_result)
+                        for rule in yara_rules:
+                            yara_result = run_yara_rule(rule, file)
+                            result.update(yara_result)
 
-                    results.append(result)
+                        results.append(result)
+                        progress.update(task_id, advance=1)
 
-            except:
-                print("An exception occurred:", sys.exc_info()[0])  # Print exception info
-                traceback.print_exc()  # This will print the stack trace to stderr
+                except:
+                    print("An exception occurred:", sys.exc_info()[0])  # Print exception info
+                    traceback.print_exc()  # This will print the stack trace to stderr
 
-    #pprint(results)
+
     json_string = json.dumps(results)
-    print(json_string)
+    with open(args.output, "w") as file:
+        file.write(json_string)
+
+    print("JSON data has been written to", args.output)
+
+    #talk_with_chatgpt()
 
 if __name__ == "__main__":
     main()
