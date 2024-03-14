@@ -29,7 +29,7 @@ class Model:
             self.FEATURES.append(f'{feature}_encoded')
             self.FEATURES.remove(feature)
         
-        model_path = 'YOURPATHTOMODELMOTHERFUCKER/xgboost_model.pkl'
+        model_path = 'machine_learning/xgboost_model.pkl'
         self.loaded_model = self.load_model(model_path)
 
     def file_name_category(self, row):
