@@ -10,6 +10,8 @@ import io
 import binascii
 import traceback
 import sys
+import openai
+
 
 from features.features import SnippetStats
 from features.features_model import Features
@@ -54,6 +56,7 @@ class Util:
                     parts = file.split('/')
                     last_part = parts[-1]
                     result["file_name"] = last_part
+                    result["full_file_path"] = file
 
                     if file_content:
                         shanon_results = self.generate_statistic_features(file_content)
@@ -97,5 +100,24 @@ class Util:
     def generate_paper_features(self, file_content):
         return get_paper_features(file_content)
 
+    def talk_with_chatgpt(question_to_gpt):
+
+        model_name="gpt-3.5-turbo"
+
+        openai.organization = os.getenv("openai_organization")
+        openai.api_key = os.getenv("openai_api_key")
+
+        message = {
+                'role': 'user',
+                'content': question_to_gpt
+            }
+        
+        response = openai.ChatCompletion.create(
+            model=model_name,
+            messages=[message]
+        )
+
+        chatbot_response = response.choices[0].message['content']
+        print(chatbot_response.strip())
 
             

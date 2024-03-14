@@ -12,16 +12,16 @@ def main():
     top_python_files = util.list_python_files()
 
     results = util.generate_features(top_python_files)
-    pprint(results)
-    print(type(results))
 
     #ML model
     ml_results = []
     for result in results:
         model = Model(json.dumps(result))
-        # ml_results.append(model.predict())
         print(model.predict())
     
+
+ 
+
     args = util.get_args()
     #json_string = json.dumps(ml_results)
     # with open(args.output, "w") as file:
