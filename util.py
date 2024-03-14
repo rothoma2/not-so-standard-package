@@ -20,6 +20,7 @@ class Util:
     def __init__(self):
         parser = argparse.ArgumentParser(description="Scan a folder using YARA")
         parser.add_argument("folder", help="Folder path to scan")
+        parser.add_argument("--output", "-o", help="Output file path", default="output.json")
         self.args = parser.parse_args()
 
         yara_path = "./yara"
@@ -44,7 +45,7 @@ class Util:
     
     def generate_features(self, python_files):
         results = []
-        for file in top_python_files:
+        for file in python_files:
 
             with open(file, 'r') as file_to_be_read:
                 try:
@@ -63,7 +64,7 @@ class Util:
 
                     if stripped_file:
                         result.update(self.generate_paper_features(file_content))
-                        result.update(self.generate_features(self.yara_rules, file))
+                        result.update(self.generate_yara_features(self.yara_rules, file))
                         results.append(result)
                 except:
                     print("An exception occurred:", sys.exc_info()[0])  # Print exception info
@@ -84,6 +85,7 @@ class Util:
         "shanon_entropy__3Q":  snippet_stats.shannon_entropy__3Q(),
         "shanon_entropy__outliers":  snippet_stats.shannon_entropy__outliers(),
         }
+        return shanon_results
     
     def generate_yara_features(self, yara_rules, file):
         result = dict()

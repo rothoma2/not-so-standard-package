@@ -1,3 +1,9 @@
+import numpy as np
+import re
+import binascii
+import base64
+import ast 
+import io
 def feature_count_words(file_content):
     words = file_content.split()
     return {"count_words" : len(words) }
@@ -81,8 +87,9 @@ def obfuscated_code_python(file_content):
             decoded_data = base64.b64decode(match.encode())
             module = ast.parse(io.BytesIO(decoded_data).read().decode())
             counter += 1
-        except(SyntaxError, UnicodeDecodeError, binascii.Error):
-            pass
+        except:
+            return {"obfuscated_code_python": 1}
+        
     return {"obfuscated_code_python": counter}
 
 def get_paper_features(file_content):
