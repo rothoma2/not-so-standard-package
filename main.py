@@ -1,20 +1,24 @@
 import json
 from util import Util
+from ml_model import Model
 
 
 def main():
     #processing file
-    Util()
-    args = Util.get_args()
-    Util.folder_exists()
+    util = Util()
+    util.folder_exists()
 
-    top_python_files = Util.list_python_files()[0:500]
+    top_python_files = util.list_python_files()[0:500]
 
-    results = Util.generate_features(top_python_files)
-    json_string = json.dumps(results)
-    print(json_string)
+    results = util.generate_features(top_python_files)
 
     #ML model
-
+    ml_results = []
+    for result in results:
+        model = Model(json.dumps(result))
+        ml_results.append(model.predict())
+    
+    print(json.dumps(ml_results))
+    
 if __name__ == "__main__":
     main()
