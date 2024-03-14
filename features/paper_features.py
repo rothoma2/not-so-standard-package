@@ -84,3 +84,16 @@ def obfuscated_code_python(file_content):
         except(SyntaxError, UnicodeDecodeError, binascii.Error):
             pass
     return {"obfuscated_code_python": counter}
+
+def get_paper_features(file_content):
+    result = dict()
+    file_content = str(file_content)
+    result.update(feature_count_words(file_content))
+    result.update(feature_count_lines(file_content))
+    result.update(feature_count_urls(file_content))
+    result.update(feature_count_ips(file_content))
+    result.update(feature_square_brackets_stats(file_content))
+    result.update(feature_equal_signs_stats(file_content))
+    result.update(feature_plus_signs_stats(file_content))
+    result.update(obfuscated_code_python(file_content))
+    return result

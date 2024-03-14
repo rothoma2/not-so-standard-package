@@ -14,7 +14,7 @@ import sys
 from features.features import SnippetStats
 from features.features_model import Features
 from features import yara_features
-from features.paper_features import *
+from features.paper_features import get_paper_features
 
 class Util:
     def __init__(self):
@@ -93,17 +93,7 @@ class Util:
         return result
     
     def generate_paper_features(self, file_content):
-        result = dict()
-        file_content = str(file_content)
-        result.update(feature_count_words(file_content))
-        result.update(feature_count_lines(file_content))
-        result.update(feature_count_urls(file_content))
-        result.update(feature_count_ips(file_content))
-        result.update(feature_square_brackets_stats(file_content))
-        result.update(feature_equal_signs_stats(file_content))
-        result.update(feature_plus_signs_stats(file_content))
-        result.update(obfuscated_code_python(file_content))
-        return result
+        return get_paper_features(file_content)
 
 
             
