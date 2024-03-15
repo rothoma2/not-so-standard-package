@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Not-so-standard-package detector</title>
+
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon.png') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <a href="/"><h1>Not-so-standard-package detector</h1></a>
+    
+    <form action="/run" method="post" enctype="multipart/form-data">
+
+        <div id="upload-options">
+            
+            <p align="center">Which package(s) do you want to scan? </p>
+            <div class="button-container">
+                <button type="button" class="form-button" id="btn1">From requirements.txt</button>
+                <button type="button" class="form-button" id="btn2">Your own package</button>
+                <button type="button" class="form-button" id="btn3">PyPI link</button>
+            </div>
+
+            <div id="textfile" class="upload-option">
+                <label for="upload-requirements">Upload requirements.txt:</label>
+                <input type="file" id="requirements" name="requirements" accept=".txt">
+            </div>
+            <div id="package" class="upload-option">
+                <label for="upload-package">Upload your own package (in .tar.gz format):</label>
+                <input type="file" id="package" name="package" accept=".tar.gz">
+            </div>
+            <div id="link" class="upload-option">
+                <label for="pypi-link">PyPI.org package source <strong>direct</strong> link:</label>
+                <input type="text" id="pypi-url" name="pypi-url" placeholder="https://pypi.org/packages/source/?/?/?.tar.gz">
+            </div>
+        </div>
+
+        {% if result %}
+            <hr>
+            <h3>Result:</h3>
+            {% if malicious_detected %}
+                <pre style="color: red"><strong>Malicious package detected!</strong></pre>
+                <p style="color: #333333">Confidence score = {{ confidence_score }}</p>
+            {% else %}
+                <pre style="color: green">Not malicious.</pre>
+            {% endif %}
+
+            <p>Console log:</p>
+            <pre style="font-size: 10px">{{ result }}</pre>
+
+            <p>LLM output:</p>
+            <pre style="font-size: 12px">{{ chat_gpt }}</pre>
+        {% endif %}
+
+        {% if error %}
+            <hr>
+            <h3>Error:</h3>
+            <pre>{{ error }}</pre>
+        {% endif %}
+        
+
+        <img id="fixed-icon" src="{{ url_for('static', filename='icon.png') }}" alt="Small Icon">
+        <div class="hackathon-text" align="right"><strong>ING Global Hackathon</strong><br>Not So Standard Deviation</div>
+
+        <button type="submit" id="run-button">Select package(s) to scan</button>
+    </form>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>
