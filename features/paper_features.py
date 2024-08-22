@@ -1,27 +1,38 @@
-import numpy as np
 import re
-import binascii
 import base64
-import ast 
+import ast
 import io
-def feature_count_words(file_content):
-    words = file_content.split()
-    return {"count_words" : len(words) }
+from typing import Dict, Any
+import numpy as np
 
-def feature_count_lines(file_content):
+
+
+def feature_count_words(file_content: str) -> Dict[str, int]:
+    words = file_content.split()
+    return {"count_words": len(words)}
+
+
+def feature_count_lines(file_content: str) -> Dict[str, int]:
     lines = file_content.split("\n")
     return {"number_of_lines": len(lines)}
 
-def feature_count_urls(file_content):
-    urls = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', file_content)
+
+def feature_count_urls(file_content: str) -> Dict[str, int]:
+    urls = re.findall(
+        r'http[s]?://'
+        r'(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|'
+        r'(?:%[0-9a-fA-F][0-9a-fA-F]))+',
+        file_content
+    )
     return {"number_of_urls": len(urls)}
 
-def feature_count_ips(file_content):
+
+def feature_count_ips(file_content: str) -> Dict[str, int]:
     ips = re.findall(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b', file_content)
     return {"number_of_ip_addresses": len(ips)}
 
 
-def feature_square_brackets_stats(file_content):
+def feature_square_brackets_stats(file_content: str) -> Dict[str, float]:
     lines = file_content.split("\n")
     ratios = [line.count("[") / len(line) for line in lines if len(line) > 0]
     mean = np.mean(ratios)
@@ -36,7 +47,7 @@ def feature_square_brackets_stats(file_content):
     }
 
 
-def feature_equal_signs_stats(file_content):
+def feature_equal_signs_stats(file_content: str) -> Dict[str, float]:
     lines = file_content.split("\n")
     ratios = [line.count("=") / len(line) for line in lines if len(line) > 0]
     mean = np.mean(ratios)
@@ -50,7 +61,8 @@ def feature_equal_signs_stats(file_content):
         "equal_signs_max_value": max_value
     }
 
-def feature_plus_signs_stats(file_content):
+
+def feature_plus_signs_stats(file_content: str) -> Dict[str, float]:
     lines = file_content.split("\n")
     ratios = [line.count("+") / len(line) for line in lines if len(line) > 0]
     mean = np.mean(ratios)
@@ -64,7 +76,8 @@ def feature_plus_signs_stats(file_content):
         "plus_signs_max_value": max_value
     }
 
-def feature_underscore_signs_stats(file_content):
+
+def feature_underscore_signs_stats(file_content: str) -> Dict[str, float]:
     lines = file_content.split("\n")
     ratios = [line.count("_") / len(line) for line in lines if len(line) > 0]
     mean = np.mean(ratios)
@@ -78,7 +91,7 @@ def feature_underscore_signs_stats(file_content):
         "underscore_signs_max_value": max_value
     }
 
-def obfuscated_code_python(file_content):
+def obfuscated_code_python(file_content: str) -> Dict[str, float]:
     matches = re.findall(r'(?s)\"\"*[^\']*\"\"*|\'\'*[^\']*\'\'*', file_content)
     counter = 0
     stripped_matches = [match.strip('\"\'') for match in matches]
@@ -92,7 +105,7 @@ def obfuscated_code_python(file_content):
         
     return {"obfuscated_code_python": counter}
 
-def get_paper_features(file_content):
+def get_paper_features(file_content: str) -> Dict[str, Any]:
     result = dict()
     file_content = str(file_content)
     result.update(feature_count_words(file_content))

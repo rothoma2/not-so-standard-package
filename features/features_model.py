@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class Features(BaseModel):   
+class Features(BaseModel):
     package_id: str
     package_name: str
     file_name: str
@@ -15,6 +15,3 @@ class Features(BaseModel):
     shanon_entropy__max: float
     shanon_entropy__1Q: float
     shanon_entropy__3Q: float
-
-
-    
