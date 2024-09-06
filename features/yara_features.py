@@ -7,11 +7,12 @@ def load_yara_rules(folder_path):
     print("Method Loading Yar Rules")
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            #print(f"Rule {file}")
+            # print(f"Rule {file}")
             if file.endswith(".yar"):
                 yar_file_path = os.path.abspath(os.path.join(root, file))
                 yara_rules.append(yar_file_path)
     return yara_rules
+
 
 def count_yara_hits(content):
     lines = content.split('\n')
@@ -22,16 +23,21 @@ def count_yara_hits(content):
             count += 1
     return count
 
+
 def run_yara_rule(rule, file_path):
     yara_path = "/usr/bin/yara"
     try:
-        result = subprocess.run([yara_path,
-                                "-rs",
-                                rule,
-                                file_path],
-                                capture_output=True,
-                                text=True,
-                                check=True)
+        result = subprocess.run(
+            [
+                yara_path,
+                "-rs",
+                rule,
+                file_path
+            ],
+            capture_output=True,
+            text=True,
+            check=True
+        )
 
         yara_output = result.stdout
         rule_name = os.path.splitext(os.path.basename(rule))[0]
