@@ -6,7 +6,6 @@ from typing import Dict, Any
 import numpy as np
 
 
-
 def feature_count_words(file_content: str) -> Dict[str, int]:
     words = file_content.split()
     return {"count_words": len(words)}
@@ -91,8 +90,12 @@ def feature_underscore_signs_stats(file_content: str) -> Dict[str, float]:
         "underscore_signs_max_value": max_value
     }
 
+
 def obfuscated_code_python(file_content: str) -> Dict[str, float]:
-    matches = re.findall(r'(?s)\"\"*[^\']*\"\"*|\'\'*[^\']*\'\'*', file_content)
+    matches = re.findall(
+        r'(?s)\"\"*[^\']*\"\"*|\'\'*[^\']*\'\'*',
+        file_content
+    )
     counter = 0
     stripped_matches = [match.strip('\"\'') for match in matches]
     for match in stripped_matches:
@@ -100,10 +103,10 @@ def obfuscated_code_python(file_content: str) -> Dict[str, float]:
             decoded_data = base64.b64decode(match.encode())
             module = ast.parse(io.BytesIO(decoded_data).read().decode())
             counter += 1
-        except:
-            return {"obfuscated_code_python": 1}
-        
+        except Exception:
+            return {"obfuscated_code_python": 1}     
     return {"obfuscated_code_python": counter}
+
 
 def get_paper_features(file_content: str) -> Dict[str, Any]:
     result = dict()

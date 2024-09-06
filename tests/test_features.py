@@ -1,11 +1,9 @@
-import pytest
+# import pytest # to remove, not used
 import sys
-
 # import features
 
 sys.path.append('/home/arlindo/not-so-standard-package')
 from features.features import SnippetStats
-
 
 
 def test_stats():
@@ -18,7 +16,7 @@ def test_stats():
     from . import views\n
 
     '''
-    snippet_stats=SnippetStats()
+    snippet_stats = SnippetStats()
     snippet_stats.set_snippet(snippet)
     snippet_stats.line_entropy()
     # print(snippet_stats.entropy_list)

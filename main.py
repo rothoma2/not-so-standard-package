@@ -1,11 +1,10 @@
 import json
-import os
 from util import Util
 from machine_learning.ml_model import Model
-from pprint import pprint
+
 
 def main():
-    #processing file
+    # processing file
     util = Util()
     util.folder_exists()
 
@@ -13,15 +12,12 @@ def main():
 
     results = util.generate_features(top_python_files)
 
-    #ML model
+    # ML model
     ml_results = []
     for result in results:
         model = Model(json.dumps(result))
         print(model.predict())
-    
-
- 
-
+        
     args = util.get_args()
     #json_string = json.dumps(ml_results)
     # with open(args.output, "w") as file:
