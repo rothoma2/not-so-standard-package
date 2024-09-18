@@ -68,8 +68,14 @@ class Model:
             lambda row: self.file_name_category(row),
             axis=1
         )
+        
+        dir_path = os.path.dirname(os.path.realpath(__file__))
 
-        model_path = 'machine_learning/xgboost_model.pkl'
+        model_path = os.path.join(
+            dir_path,
+            'machine_learning/xgboost_model.pkl'
+        )
+        
         self.loaded_model = self.load_model(model_path)
 
     def file_name_category(self, row):
